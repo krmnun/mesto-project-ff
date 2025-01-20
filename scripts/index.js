@@ -102,5 +102,4 @@ function renderCards(cards) {
     });
 }
 
-// Отрисовываем начальные карточки из массива initialCards
 renderCards(initialCards);
