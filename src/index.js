@@ -38,11 +38,6 @@ function renderCards(cards) {
     });
 }
 
-// Функция обработки удаления карточки
-function handleDeleteClick(cardData, cardElement) {
-    cardElement.remove();
-}
-
 // Обработчик отправки формы добавления карточки
 newCardButton.addEventListener('click', () => openModal(newCardPopup));
 
