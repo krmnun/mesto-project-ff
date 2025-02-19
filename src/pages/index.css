@@ -1,0 +1,13 @@
+@import url('../vendor/normalize.css');
+@import url('../vendor/fonts.css');
+@import url('../src/blocks/page/page.css');
+@import url('../src/blocks/header/header.css');
+@import url('../src/blocks/content/content.css');
+@import url('../src/blocks/footer/footer.css');
+@import url('../src/blocks/profile/profile.css');
+@import url('../src/blocks/places/places.css');
+@import url('../src/blocks/card/card.css');
+@import url('../src/blocks/popup/popup.css');
+@import url('../src/blocks/popup/_is-animated/popup_is-animated.css');
+@import url('../src/blocks/popup/_is-opened/popup_is-opened.css');
+
