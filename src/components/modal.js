@@ -20,3 +20,4 @@ function closeByEsc(evt) {
         if (openedModal) closeModal(openedModal);
     }
 }
+

@@ -13,7 +13,9 @@ export function createCard(cardData, handleLikeClick, handleImageClick, handleDe
 
     cardImage.addEventListener('click', () => handleImageClick(cardData));
     likeButton.addEventListener('click', () => handleLikeClick(likeButton));
-    deleteButton.addEventListener('click', () => handleDeleteClick(cardData, cardElement));
+
+    // Обработчик удаления карточки
+    deleteButton.addEventListener('click', () => handleDeleteClick(cardElement));
 
     return cardElement;
 }
@@ -21,3 +23,5 @@ export function createCard(cardData, handleLikeClick, handleImageClick, handleDe
 export function handleLikeClick(likeButton) {
     likeButton.classList.toggle('card__like-button_is-active');
 }
+
+
