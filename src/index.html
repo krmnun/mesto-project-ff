@@ -32,35 +32,65 @@
       © 2025 Mesto Russia
     </p>
   </footer>
-  <div class="popup popup_type_edit">
+  <div class="popup  popup_is-animated popup_type_edit">
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Редактировать профиль</h3>
       <form class="popup__form" name="edit-profile">
-        <input id="name" type="text" name="name" class="popup__input popup__input_type_name" placeholder="Имя" required>
-        <input id="description" type="text" name="description" class="popup__input popup__input_type_description" placeholder="Занятие" required>
-
+        <input type="text" name="name" class="popup__input popup__input_type_name" placeholder="Имя" id="name-input"
+               minlength="2" maxlength="40" pattern="[A-Za-zА-Яа-яЁё]+([\s\-][A-Za-zА-Яа-яЁё]+)*"
+               data-error-message="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы" required>
+        <span class="name-input-error popup__error"></span>
+        <input type="text" name="description" class="popup__input popup__input_type_description" placeholder="Занятие"
+               id="description-input" minlength="2" maxlength="200" pattern="[A-Za-zА-Яа-яЁё]+([\s\-][A-Za-zА-Яа-яЁё]+)*"
+               data-error-message="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы" required>
+        <span class="description-input-error popup__error"></span>
         <button type="submit" class="button popup__button">Сохранить</button>
       </form>
     </div>
   </div>
-  <div class="popup popup_type_new-card">
+  <div class="popup popup_type_edit-avatar">
+    <div class="popup__content">
+      <button type="button" class="popup__close"></button>
+      <h3 class="popup__title">Обновить аватар</h3>
+      <form class="popup__form" name="edit-avatar">
+        <input type="url" name="avatar" class="popup__input popup__input_type_url" placeholder="Cслыка на картинку"
+               required id="avatar-input" />
+        <span class="avatar-input-error popup__error"></span>
+        <button type="submit" class="button popup__button">Сохранить</button>
+      </form>
+    </div>
+  </div>
+  <div class="popup  popup_is-animated popup_type_new-card">
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Новое место</h3>
       <form class="popup__form" name="new-place">
-        <input id="place-name" type="text" name="place-name" class="popup__input popup__input_type_card-name" placeholder="Название" required>
-        <input id="place-link" type="url" name="link" class="popup__input popup__input_type_url" placeholder="Ссылка на картинку" required>
-
+        <input type="text" name="place-name" class="popup__input popup__input_type_card-name" placeholder="Название"
+               id="place-name-input" minlength="2" maxlength="30" pattern="[A-Za-zА-Яа-яЁё]+([\s\-][A-Za-zА-Яа-яЁё]+)*"
+               data-error-message="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы" required>
+        <span class="place-name-input-error popup__error"></span>
+        <input type="url" name="link" class="popup__input popup__input_type_url" placeholder="Ссылка на картинку"
+               id="link-input" required>
+        <span class="link-input-error popup__error"></span>
         <button type="submit" class="button popup__button">Сохранить</button>
       </form>
     </div>
   </div>
-  <div class="popup popup_type_image">
+  <div class="popup popup_type_image popup_is-animated">
     <div class="popup__content popup__content_content_image">
       <button type="button" class="popup__close"></button>
       <img src="" alt="" class="popup__image">
       <p class="popup__caption"></p>
+    </div>
+  </div>
+  <div class="popup popup_type_confirm">
+    <div class="popup__content">
+      <button type="button" class="popup__close"></button>
+      <h3 class="popup__title">Вы уверены?</h3>
+      <button type="button" class="button popup__button popup__button_confirm">
+        Да
+      </button>
     </div>
   </div>
 </div>
@@ -72,6 +102,7 @@
       <h2 class="card__title">
       </h2>
       <button type="button" class="card__like-button"></button>
+      <span class="card__like-count">0</span>
     </div>
   </li>
 </template>
