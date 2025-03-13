@@ -1,23 +1,32 @@
 export function openModal(modal) {
+    if (!modal) {
+        console.error('Модальное окно не найдено');
+        return;
+    }
     modal.classList.add('popup_is-opened');
-    document.addEventListener('keydown', closeByEsc);
+    document.addEventListener('keydown', handleEscClose);
 }
 
 export function closeModal(modal) {
+    if (!modal) {
+        console.error('Модальное окно не найдено');
+        return;
+    }
     modal.classList.remove('popup_is-opened');
-    document.removeEventListener('keydown', closeByEsc);
+    document.removeEventListener('keydown', handleEscClose);
 }
 
-export function closeByOverlay(evt) {
-    if (evt.target === evt.currentTarget) {
-        closeModal(evt.target);
+export function closeByOverlay(event) {
+    if (event.target === event.currentTarget) {
+        closeModal(event.target);
     }
 }
 
-function closeByEsc(evt) {
-    if (evt.key === 'Escape') {
-        const openedModal = document.querySelector('.popup_is-opened');
-        if (openedModal) closeModal(openedModal);
+function handleEscClose(event) {
+    if (event.key === 'Escape') {
+        const openedPopup = document.querySelector('.popup_is-opened');
+        if (openedPopup) {
+            closeModal(openedPopup);
+        }
     }
 }
-

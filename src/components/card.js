@@ -2,7 +2,7 @@ import { likeCard, unlikeCard } from './api.js';
 
 export function createCard(cardData, handleLikeClick, openImagePopup, handleDeleteClick, userId) {
     const cardTemplate = document.querySelector('#card-template').content;
-    const cardElement = cardTemplate.querySelector('.card').cloneNode(true);
+    const cardElement = cardTemplate.querySelector('.places__item').cloneNode(true);
 
     const cardImage = cardElement.querySelector('.card__image');
     const cardTitle = cardElement.querySelector('.card__title');

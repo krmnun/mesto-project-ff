@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const placesList = getElement('.places__list');
 
-    const profileImageForm = document.forms['edit-avatar'];
-    const profileImageInput = profileImageForm ? profileImageForm.elements.avatar : null;
+    const profileImageForm = getElement('form[name="edit-avatar"]');
+    const profileImageInput = profileImageForm ? profileImageForm.querySelector('input[name="avatar"]') : null;
     const popupProfileImage = getElement('.popup_type_edit-avatar');
 
     const newCardButton = getElement('.profile__add-button');
@@ -64,55 +64,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Проверки на наличие элементов
     if (!newCardButton) {
         console.error('Кнопка с классом "profile__add-button" не найдена');
-        return;
     }
     if (!newCardForm) {
         console.error('Форма с классом "popup__form" в попапе "popup_type_new-card" не найдена');
-        return;
     }
     if (!newCardPopup) {
         console.error('Popup с классом "popup_type_new-card" не найден');
-        return;
     }
     if (!placesList) {
         console.error('Список мест с классом "places__list" не найден');
-        return;
     }
     if (!profileImageForm) {
         console.error('Форма с именем "edit-avatar" не найдена');
-        return;
     }
     if (!profileImageInput) {
         console.error('Поле ввода "avatar" в форме "edit-avatar" не найдено');
-        return;
     }
     if (!popupProfileImage) {
         console.error('Попап с классом "popup_type_edit-avatar" не найден');
-        return;
     }
     if (!editProfilePopup) {
         console.error('Попап с классом "popup_type_edit" не найден');
-        return;
     }
     if (!editProfileButton) {
         console.error('Кнопка с классом "profile__edit-button" не найдена');
-        return;
     }
     if (!editProfileForm) {
         console.error('Форма с классом "popup__form" в попапе "popup_type_edit" не найдена');
-        return;
     }
     if (!profileName) {
         console.error('Элемент с классом "profile__title" не найден');
-        return;
     }
     if (!profileDescription) {
         console.error('Элемент с классом "profile__description" не найден');
-        return;
     }
     if (!profileImage) {
         console.error('Элемент с классом "profile__image" не найден');
-        return;
     }
 
     console.log('Все элементы найдены:', {
@@ -205,61 +192,107 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupFormHandlers(options) {
-        options.openButton.addEventListener('click', () => handleOpenPopup(options.popup, options.form, options.initialValues || {}));
-        options.form.addEventListener('submit', handleFormSubmit({
-            form: options.form,
-            popup: options.popup,
-            apiCall: options.apiCall,
-            updateDOM: options.updateDOM
-        }));
+        console.log('Добавляю обработчики для формы:', options.form); // Отладка
+        options.openButton.addEventListener('click', () => {
+            console.log('Открываю попап:', options.popup); // Отладка
+            handleOpenPopup(options.popup, options.form, options.initialValues || {});
+        });
+        if (options.form) {
+            options.form.addEventListener('submit', handleFormSubmit({
+                form: options.form,
+                popup: options.popup,
+                apiCall: options.apiCall,
+                updateDOM: options.updateDOM
+            }));
+            console.log('Обработчик submit добавлен для формы:', options.form); // Отладка
+        } else {
+            console.error('Форма не найдена для обработчика:', options);
+        }
+    }
+
+    // Добавление обработчика для кнопок закрытия попапов
+    function setupClosePopupButtons() {
+        document.querySelectorAll('.popup__close').forEach((closeButton) => {
+            const popup = closeButton.closest('.popup');
+            if (!popup) {
+                console.error('Попап не найден для кнопки закрытия:', closeButton);
+                return;
+            }
+            closeButton.addEventListener('click', () => {
+                console.log('Закрываю попап через кнопку закрытия:', popup); // Отладка
+                closeModal(popup);
+
+                // Очищаем форму, если она есть
+                const form = popup.querySelector('.popup__form');
+                if (form) {
+                    form.reset();
+                    clearValidation(form, validationConfig);
+                }
+            });
+        });
     }
 
     // Настройка обработчиков форм
-    setupFormHandlers({
-        openButton: newCardButton,
-        form: newCardForm,
-        popup: newCardPopup,
-        apiCall: (formData) => APICreateCard({ name: formData['place-name'], link: formData['link'] }),
-        updateDOM: (cardData) => {
-            const newCard = createCard(cardData, handleLikeClick, openImagePopup, handleDeleteClick, userId);
-            if (newCard) {
-                placesList.prepend(newCard);
+    if (newCardButton && newCardForm && newCardPopup) {
+        setupFormHandlers({
+            openButton: newCardButton,
+            form: newCardForm,
+            popup: newCardPopup,
+            apiCall: (formData) => APICreateCard({ name: formData['place-name'], link: formData['link'] }),
+            updateDOM: (cardData) => {
+                const newCard = createCard(cardData, handleLikeClick, openImagePopup, handleDeleteClick, userId);
+                if (newCard) {
+                    placesList.prepend(newCard);
+                }
+                if (newCardForm) newCardForm.reset();
             }
-            newCardForm.reset();
-        }
-    });
+        });
+    }
 
-    setupFormHandlers({
-        openButton: editProfileButton,
-        form: editProfileForm,
-        popup: editProfilePopup,
-        apiCall: (formData) => updateUserInfo(formData['name'], formData['description']),
-        updateDOM: (data) => {
-            setTextContent(profileName, data.name || profileName.textContent);
-            setTextContent(profileDescription, data.about || profileDescription.textContent);
-        },
-        initialValues: {
-            name: profileName.textContent,
-            description: profileDescription.textContent
-        }
-    });
+    if (editProfileButton && editProfileForm && editProfilePopup) {
+        setupFormHandlers({
+            openButton: editProfileButton,
+            form: editProfileForm,
+            popup: editProfilePopup,
+            apiCall: (formData) => updateUserInfo(formData['name'], formData['description']),
+            updateDOM: (data) => {
+                setTextContent(profileName, data.name || profileName.textContent);
+                setTextContent(profileDescription, data.about || profileDescription.textContent);
+            },
+            initialValues: {
+                name: profileName.textContent,
+                description: profileDescription.textContent
+            }
+        });
+    }
 
-    setupFormHandlers({
-        openButton: profileImage,
-        form: profileImageForm,
-        popup: popupProfileImage,
-        apiCall: (formData) => updateAvatar(formData['avatar']),
-        updateDOM: (data) => {
-            const avatarUrl = data.avatar || profileImage.style.backgroundImage.match(/url\("(.+)"\)/)?.[1] || '';
-            profileImage.style.backgroundImage = `url(${avatarUrl})`;
-        }
-    });
+    if (profileImage && profileImageForm && popupProfileImage) {
+        setupFormHandlers({
+            openButton: profileImage,
+            form: profileImageForm,
+            popup: popupProfileImage,
+            apiCall: (formData) => updateAvatar(formData['avatar']),
+            updateDOM: (data) => {
+                const avatarUrl = data.avatar || profileImage.style.backgroundImage.match(/url\("(.+)"\)/)?.[1] || '';
+                profileImage.style.backgroundImage = `url(${avatarUrl})`;
+            }
+        });
+    }
 
     // Инициализация данных
     let userId = null;
     Promise.all([getUserInfo(), getInitialCards()])
-        .then(([userData, cardsData]) => {
-            userId = userData._id;
+        /**
+         * @typedef {Object} UserData
+         * @property {string} _id - Идентификатор пользователя
+         * @property {string} name - Имя пользователя
+         * @property {string} about - Описание пользователя
+         * @property {string} avatar - URL аватара
+         */
+        .then(([/** @type {UserData} */ userData, cardsData]) => {
+            console.log('Данные пользователя:', userData); // Отладка
+            console.log('Данные карточек:', cardsData); // Отладка
+            userId = userData._id || 'default_user_id';
             setTextContent(profileName, userData.name || 'Имя пользователя');
             setTextContent(profileDescription, userData.about || 'Описание');
             profileImage.style.backgroundImage = `url(${userData.avatar || './images/avatar.jpg'})`;
@@ -276,6 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Закрытие попапов по клику на оверлей
     const modals = document.querySelectorAll('.popup');
     modals.forEach((modal) => modal.addEventListener('mousedown', closeByOverlay));
+
+    // Установка обработчиков для кнопок закрытия
+    setupClosePopupButtons();
 
     // Инициализация валидации
     enableValidation(validationConfig);
