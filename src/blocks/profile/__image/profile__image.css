@@ -7,6 +7,7 @@
   background-size: cover;
   background-position: center;
   margin: 0 29px 0 0;
+  transition: opacity 0.3s ease;
 }
 
 @media screen and (max-width: 740px) {
@@ -19,4 +20,30 @@
   .profile__image {
     margin-right: 0;
   }
+}
+
+.profile__image:hover {
+  z-index: 0;
+  cursor: pointer;
+}
+
+.overlay {
+  background-color: rgb(0 0 0 /0.8);
+  display: block;
+  position: absolute;
+  height: 120px;
+  width: 120px;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.overlay-edit {
+  z-index: 1;
+  position: absolute;
+  margin-block-start: 50px;
+  margin-inline-start: 50px;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  transition: opacity 0.3s ease;
 }

@@ -163,12 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleFormSubmit(options) {
         return (event) => {
             event.preventDefault();
-            console.log('Форма отправлена:', options.form); // Отладка
             const formData = {};
             Array.from(options.form.querySelectorAll('.popup__input')).forEach((input) => {
-                formData[input.name] = input.value;
+                formData[input.name] = input.value.trim();
             });
-            console.log('Данные формы:', formData); // Отладка
 
             const submitButton = options.form.querySelector(validationConfig.submitButtonSelector);
             if (!submitButton) {
@@ -180,11 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             options.apiCall(formData)
                 .then((data) => {
-                    console.log('Успешный ответ от API:', data); // Отладка
-                    options.updateDOM(data);
+                    const avatarUrl = data.avatar || './images/avatar.jpg';
+                    profileImage.style.backgroundImage = `url(${avatarUrl})`;
                     closeModal(options.popup);
                 })
-                .catch((error) => console.error('Ошибка:', error))
+                .catch((error) => {
+                    console.error('Ошибка:', error);
+                    alert(`Ошибка обновления аватара: ${error.message || 'Проверьте URL и попробуйте снова.'}`);
+                })
                 .finally(() => {
                     submitButton.textContent = originalButtonText;
                 });
@@ -210,6 +211,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Настройка формы редактирования профиля
+    if (editProfileButton && editProfileForm && editProfilePopup) {
+        setupFormHandlers({
+            openButton: editProfileButton,
+            form: editProfileForm,
+            popup: editProfilePopup,
+            apiCall: (formData) => updateUserInfo(formData.name, formData.description),
+            updateDOM: (data) => {
+                setTextContent(profileName, data.name);
+                setTextContent(profileDescription, data.about);
+                console.log('Профиль обновлён:', data.name, data.about);
+            },
+            initialValues: {
+                name: profileName.textContent,
+                description: profileDescription.textContent,
+            },
+        });
+    }
+
     // Добавление обработчика для кнопок закрытия попапов
     function setupClosePopupButtons() {
         document.querySelectorAll('.popup__close').forEach((closeButton) => {
@@ -221,13 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
             closeButton.addEventListener('click', () => {
                 console.log('Закрываю попап через кнопку закрытия:', popup); // Отладка
                 closeModal(popup);
-
-                // Очищаем форму, если она есть
-                const form = popup.querySelector('.popup__form');
-                if (form) {
-                    form.reset();
-                    clearValidation(form, validationConfig);
-                }
             });
         });
     }
@@ -250,19 +263,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (editProfileButton && editProfileForm && editProfilePopup) {
+        console.log('Инициализация формы редактирования профиля');
+        console.log('Элементы:', { editProfileButton, editProfileForm, editProfilePopup, profileName, profileDescription });
         setupFormHandlers({
             openButton: editProfileButton,
             form: editProfileForm,
             popup: editProfilePopup,
-            apiCall: (formData) => updateUserInfo(formData['name'], formData['description']),
+            apiCall: (formData) => {
+                console.log('Отправка данных в API:', formData);
+                return updateUserInfo(formData.name, formData.description)
+                    .then((response) => {
+                        console.log('Получен ответ от API:', response);
+                        return response;
+                    })
+                    .catch((error) => {
+                        console.error('Ошибка при вызове API:', error);
+                        throw error;
+                    });
+            },
             updateDOM: (data) => {
-                setTextContent(profileName, data.name || profileName.textContent);
-                setTextContent(profileDescription, data.about || profileDescription.textContent);
+                console.log('Попытка обновить DOM с данными:', data);
+                if (!data) {
+                    console.error('Данные от API пустые');
+                    return;
+                }
+                if (profileName && profileDescription) {
+                    const newName = data.name || data.user?.name || 'Имя пользователя';
+                    const newAbout = data.about || data.user?.about || 'Описание';
+                    console.log('Новые значения:', { newName, newAbout });
+                    setTextContent(profileName, newName);
+                    setTextContent(profileDescription, newAbout);
+                    console.log('DOM после обновления:', {
+                        profileNameText: profileName.textContent,
+                        profileDescriptionText: profileDescription.textContent,
+                    });
+                    // Принудительная перерисовка
+                    profileName.style.display = 'none';
+                    profileName.offsetHeight; // Вызываем reflow
+                    profileName.style.display = '';
+                    profileDescription.style.display = 'none';
+                    profileDescription.offsetHeight; // Вызываем reflow
+                    profileDescription.style.display = '';
+                } else {
+                    console.error('Элементы profileName или profileDescription не найдены:', {
+                        profileName,
+                        profileDescription,
+                    });
+                }
             },
             initialValues: {
-                name: profileName.textContent,
-                description: profileDescription.textContent
-            }
+                name: profileName ? profileName.textContent : 'Имя пользователя',
+                description: profileDescription ? profileDescription.textContent : 'Описание',
+            },
         });
     }
 
@@ -289,9 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
          * @property {string} about - Описание пользователя
          * @property {string} avatar - URL аватара
          */
-        .then(([/** @type {UserData} */ userData, cardsData]) => {
-            console.log('Данные пользователя:', userData); // Отладка
-            console.log('Данные карточек:', cardsData); // Отладка
+        .then(([userData, cardsData]) => {
             userId = userData._id || 'default_user_id';
             setTextContent(profileName, userData.name || 'Имя пользователя');
             setTextContent(profileDescription, userData.about || 'Описание');
@@ -300,10 +350,10 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch((error) => {
             console.error('Ошибка загрузки данных:', error);
-            renderCards(initialCards, 'ваш_id_пользователя');
             setTextContent(profileName, 'Имя пользователя');
             setTextContent(profileDescription, 'Описание');
             profileImage.style.backgroundImage = `url('./images/avatar.jpg')`;
+            renderCards(initialCards, 'default_user_id');
         });
 
     // Закрытие попапов по клику на оверлей

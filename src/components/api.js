@@ -29,13 +29,14 @@ export const getInitialCards = () => {
 };
 
 export const updateUserInfo = (name, about) => {
+    console.log('Запрос к API с:', { name, about }, 'URL:', `${baseUrl}/users/me`, 'Token:', token);
     return fetch(`${baseUrl}/users/me`, {
         method: 'PATCH',
         headers: {
             authorization: token,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, about })
+        body: JSON.stringify({ name, about }),
     }).then(handleResponse);
 };
 
