@@ -73,11 +73,14 @@ function hideInputError(form, input, inputErrorClass, errorClass) {
 function toggleButtonState(inputList, submitButton, inactiveButtonClass) {
     if (!submitButton) return;
     const hasInvalidInput = inputList.some((input) => !input.validity.valid);
+    console.log('Проверка состояния кнопки:', { hasInvalidInput, submitButton });
     if (hasInvalidInput) {
         submitButton.classList.add(inactiveButtonClass);
         submitButton.disabled = true;
+        console.log('Кнопка отключена, класс добавлен:', inactiveButtonClass);
     } else {
         submitButton.classList.remove(inactiveButtonClass);
         submitButton.disabled = false;
+        console.log('Кнопка включена, класс убран:', inactiveButtonClass);
     }
 }
