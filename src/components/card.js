@@ -33,7 +33,8 @@ export const createCard = (cardData, handleLikeClick, openImagePopup, handleDele
     if (cardData.likes.some((like) => like._id === userId)) {
         likeButton.classList.add('card__like-button_active');
     }
-    likeButton.addEventListener('click', () => handleLikeClick(cardData._id, likeButton, likeCount));
+    // Исправляем вызов handleLikeClick, передаём cardElement вместо cardData._id
+    likeButton.addEventListener('click', () => handleLikeClick(cardElement, likeButton, likeCount));
 
     cardImage.addEventListener('click', () => openImagePopup(cardData));
 
@@ -42,6 +43,10 @@ export const createCard = (cardData, handleLikeClick, openImagePopup, handleDele
 
 export function handleLikeClick(cardElement, likeButton, likeCount) {
     const cardId = cardElement.dataset.cardId;
+    if (!cardId) {
+        console.error('cardId не найден в элементе карточки:', cardElement);
+        return;
+    }
     const isLiked = likeButton.classList.contains('card__like-button_is-active');
     const apiCall = isLiked ? unlikeCard : likeCard;
 
