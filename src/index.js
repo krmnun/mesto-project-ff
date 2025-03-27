@@ -3,7 +3,7 @@ import { initialCards } from './scripts/cards.js';
 import { createCard, handleLikeClick } from './components/card.js';
 import { openModal, closeModal, closeByOverlay } from './components/modal.js';
 import { enableValidation, clearValidation } from './components/validation.js';
-import { getInitialCards, createCard as APICreateCard, deleteCard as APIDeleteCard, getUserInfo, updateUserInfo, updateAvatar } from './components/api.js'; // eslint-disable-line no-unused-vars
+import { getInitialCards, createCard as APICreateCard, deleteCard as APIDeleteCard, getUserInfo, updateUserInfo, updateAvatar } from './components/api.js';
 
 // Утилиты для работы с DOM
 const getElement = (selector, parent) => (parent || document).querySelector(selector);
@@ -29,6 +29,16 @@ const setupPopupContent = (popup, selectors, data) => {
     openModal(popup);
 };
 
+// Конфигурация валидации
+const validationConfig = {
+    formSelector: '.popup__form',
+    inputSelector: '.popup__input',
+    submitButtonSelector: '.popup__button',
+    inactiveButtonClass: 'popup__button_disabled',
+    inputErrorClass: 'popup__input_type_error',
+    errorClass: 'popup__error_visible'
+};
+
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM полностью загружен, начинаю инициализацию');
@@ -52,15 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const newCardPopup = getElement('.popup_type_new-card');
     const newCardForm = newCardPopup ? getElement('.popup__form', newCardPopup) : null;
 
-    const validationConfig = {
-        formSelector: '.popup__form',
-        inputSelector: '.popup__input',
-        submitButtonSelector: '.popup__button',
-        inactiveButtonClass: 'popup__button_disabled',
-        inputErrorClass: 'popup__input_type_error',
-        errorClass: 'popup__error_visible'
-    };
-
     // Проверки на наличие элементов
     if (!newCardButton) console.error('Кнопка с классом "profile__add-button" не найдена');
     if (!newCardForm) console.error('Форма с классом "popup__form" в попапе "popup_type_new-card" не найдена');
@@ -78,18 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('Все элементы найдены:', { editProfileButton, editProfileForm, profileName, profileDescription, profileImage });
 
-    // Удаляем все существующие обработчики submit и определяем newCardFormUpdated сразу после определения newCardForm
+    // Удаление клонирование формы добавления карточки
+    let newCardFormUpdated;
     if (newCardForm) {
         newCardForm.replaceWith(newCardForm.cloneNode(true));
-        // Заново получаем форму после клонирования
-        const newCardFormUpdated = newCardPopup.querySelector('.popup__form');
-
-        // Обработчик открытия формы добавления карточки
-        newCardButton.addEventListener('click', () => {
-            newCardFormUpdated.reset();
-            clearValidation(newCardFormUpdated, validationConfig);
-            openModal(newCardPopup);
-        });
+        newCardFormUpdated = newCardPopup.querySelector('.popup__form');
 
         // Обработчик открытия формы добавления карточки
         newCardButton.addEventListener('click', () => {
@@ -104,11 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newCardFormUpdated.reset();
             clearValidation(newCardFormUpdated, validationConfig);
             openModal(newCardPopup);
-            setTimeout(() => {
-                enableValidation(validationConfig, newCardFormUpdated);
-            }, 0);
         });
-
 
         // Обработчик отправки формы добавления карточки
         newCardFormUpdated.addEventListener('submit', (event) => {
@@ -153,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('newCardForm не определена, обработчики для формы добавления карточки не установлены');
     }
 
-
     // Функции
     function openImagePopup(cardData) {
         const popupSelectors = { image: '.popup__image', caption: '.popup__caption' };
@@ -197,11 +186,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         form.reset();
         clearValidation(form, validationConfig);
-        Object.keys(values).forEach((key) => {
-            const input = form.querySelector(`.popup__input_type_${key}`);
-            if (input) input.value = values[key];
-        });
+        console.log('Значения для заполнения формы:', values);
+
+        // Заполняем поля напрямую в зависимости от формы
+        const nameInput = form.querySelector('.popup__input_type_name');
+        const descriptionInput = form.querySelector('.popup__input_type_description');
+        const urlInput = form.querySelector('.popup__input_type_url');
+        const cardNameInput = form.querySelector('.popup__input_type_card-name');
+
+        if (nameInput) {
+            nameInput.value = values.name || '';
+            console.log('Поле name заполнено значением:', nameInput.value);
+        }
+        if (descriptionInput) {
+            descriptionInput.value = values.description || '';
+            console.log('Поле description заполнено значением:', descriptionInput.value);
+        }
+        if (urlInput) {
+            urlInput.value = values.avatar || '';
+            console.log('Поле url заполнено значением:', urlInput.value);
+        }
+        if (cardNameInput) {
+            cardNameInput.value = values.name || '';
+            console.log('Поле card-name заполнено значением:', cardNameInput.value);
+        }
+
         openModal(popup);
+
+        // Принудительно вызываем проверку валидации после заполнения полей
+        const inputList = Array.from(form.querySelectorAll(validationConfig.inputSelector));
+        const buttonElement = form.querySelector(validationConfig.submitButtonSelector);
+        inputList.forEach((inputElement) => {
+            const event = new Event('input', { bubbles: true });
+            inputElement.dispatchEvent(event);
+        });
+        toggleButtonState(inputList, buttonElement, validationConfig);
     }
 
     function handleFormSubmit(options) {
@@ -237,8 +256,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupFormHandlers(options) {
         console.log('Добавляю обработчики для формы:', options.form);
+        console.log('Начальные значения для формы:', options.initialValues);
         options.openButton.addEventListener('click', () => {
             console.log('Открываю попап:', options.popup);
+            // Для формы редактирования профиля всегда используем текущие данные с сайта
+            if (options.popup.classList.contains('popup_type_edit')) {
+                options.initialValues = {
+                    name: profileName.textContent,
+                    description: profileDescription.textContent,
+                };
+                console.log('Обновлённые начальные значения для формы редактирования профиля:', options.initialValues);
+            }
             handleOpenPopup(options.popup, options.form, options.initialValues || {});
         });
         if (options.form) {
@@ -254,52 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Настройка формы редактирования профиля
-    if (editProfileButton && editProfileForm && editProfilePopup) {
-        setupFormHandlers({
-            openButton: editProfileButton,
-            form: editProfileForm,
-            popup: editProfilePopup,
-            apiCall: (formData) => {
-                console.log('Вызов updateUserInfo с данными:', formData);
-                return updateUserInfo(formData.name, formData.description);
-            },
-            updateDOM: (data) => {
-                const newName = data.name || 'Имя пользователя';
-                const newAbout = data.about || 'Описание';
-                setTextContent(profileName, newName);
-                setTextContent(profileDescription, newAbout);
-                console.log('Профиль обновлён:', newName, newAbout);
-                // Принудительная перерисовка
-                profileName.style.display = 'none';
-                profileName.offsetHeight;
-                profileName.style.display = '';
-                profileDescription.style.display = 'none';
-                profileDescription.offsetHeight;
-                profileDescription.style.display = '';
-            },
-            initialValues: {
-                name: profileName.textContent,
-                description: profileDescription.textContent,
-            },
-        });
-    }
-
-    // Настройка формы редактирования аватара
-    if (profileImage && profileImageForm && popupProfileImage) {
-        setupFormHandlers({
-            openButton: profileImage,
-            form: profileImageForm,
-            popup: popupProfileImage,
-            apiCall: (formData) => updateAvatar(formData.avatar),
-            updateDOM: (data) => {
-                const avatarUrl = data.avatar || profileImage.style.backgroundImage.match(/url\("(.+)"\)/)?.[1] || '';
-                profileImage.style.backgroundImage = `url(${avatarUrl})`;
-            }
-        });
-    }
-
-    // Добавление обработчика для кнопок закрытия попапов
     function setupClosePopupButtons() {
         document.querySelectorAll('.popup__close').forEach((closeButton) => {
             const popup = closeButton.closest('.popup');
@@ -316,14 +298,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Инициализация данных
     let userId = null;
+    let userData = null;
     Promise.all([getUserInfo(), getInitialCards()])
-        .then(([userData, cardsData]) => {
+        .then(([fetchedUserData, cardsData]) => {
+            console.log('Данные пользователя с сервера:', fetchedUserData);
+            console.log('Данные карточек с сервера:', cardsData);
+            userData = fetchedUserData;
             userId = userData._id || 'default_user_id';
             console.log('Получен userId:', userId);
+            console.log('Данные пользователя:', userData);
             setTextContent(profileName, userData.name || 'Имя пользователя');
             setTextContent(profileDescription, userData.about || 'Описание');
             profileImage.style.backgroundImage = `url(${userData.avatar || './images/avatar.jpg'})`;
             renderCards(cardsData, userId);
+
+            // Настройка формы редактирования профиля
+            if (editProfileButton && editProfileForm && editProfilePopup) {
+                setupFormHandlers({
+                    openButton: editProfileButton,
+                    form: editProfileForm,
+                    popup: editProfilePopup,
+                    apiCall: (formData) => {
+                        console.log('Вызов updateUserInfo с данными:', formData);
+                        return updateUserInfo(formData.name, formData.description);
+                    },
+                    updateDOM: (data) => {
+                        const newName = data.name || 'Имя пользователя';
+                        const newAbout = data.about || 'Описание';
+                        setTextContent(profileName, newName);
+                        setTextContent(profileDescription, newAbout);
+                        console.log('Профиль обновлён:', newName, newAbout);
+                        profileName.style.display = 'none';
+                        profileName.offsetHeight;
+                        profileName.style.display = '';
+                        profileDescription.style.display = 'none';
+                        profileDescription.offsetHeight;
+                        profileDescription.style.display = '';
+                    },
+                    initialValues: {
+                        name: profileName.textContent,
+                        description: profileDescription.textContent,
+                    },
+                });
+            }
+
+            // Настройка формы редактирования аватара
+            if (profileImage && profileImageForm && popupProfileImage) {
+                setupFormHandlers({
+                    openButton: profileImage,
+                    form: profileImageForm,
+                    popup: popupProfileImage,
+                    apiCall: (formData) => updateAvatar(formData.avatar),
+                    updateDOM: (data) => {
+                        const avatarUrl = data.avatar || profileImage.style.backgroundImage.match(/url\("(.+)"\)/)?.[1] || '';
+                        profileImage.style.backgroundImage = `url(${avatarUrl})`;
+                    },
+                    initialValues: {}, // Для формы аватара начальные значения не нужны
+                });
+            }
         })
         .catch((error) => {
             console.error('Ошибка загрузки данных:', error);
@@ -331,6 +363,50 @@ document.addEventListener('DOMContentLoaded', () => {
             setTextContent(profileDescription, 'Описание');
             profileImage.style.backgroundImage = `url('./images/avatar.jpg')`;
             renderCards(initialCards, 'default_user_id');
+
+            // Настраиваем формы даже в случае ошибки
+            if (editProfileButton && editProfileForm && editProfilePopup) {
+                setupFormHandlers({
+                    openButton: editProfileButton,
+                    form: editProfileForm,
+                    popup: editProfilePopup,
+                    apiCall: (formData) => {
+                        console.log('Вызов updateUserInfo с данными:', formData);
+                        return updateUserInfo(formData.name, formData.description);
+                    },
+                    updateDOM: (data) => {
+                        const newName = data.name || 'Имя пользователя';
+                        const newAbout = data.about || 'Описание';
+                        setTextContent(profileName, newName);
+                        setTextContent(profileDescription, newAbout);
+                        console.log('Профиль обновлён:', newName, newAbout);
+                        profileName.style.display = 'none';
+                        profileName.offsetHeight;
+                        profileName.style.display = '';
+                        profileDescription.style.display = 'none';
+                        profileDescription.offsetHeight;
+                        profileDescription.style.display = '';
+                    },
+                    initialValues: {
+                        name: profileName.textContent,
+                        description: profileDescription.textContent,
+                    },
+                });
+            }
+
+            if (profileImage && profileImageForm && popupProfileImage) {
+                setupFormHandlers({
+                    openButton: profileImage,
+                    form: profileImageForm,
+                    popup: popupProfileImage,
+                    apiCall: (formData) => updateAvatar(formData.avatar),
+                    updateDOM: (data) => {
+                        const avatarUrl = data.avatar || profileImage.style.backgroundImage.match(/url\("(.+)"\)/)?.[1] || '';
+                        profileImage.style.backgroundImage = `url(${avatarUrl})`;
+                    },
+                    initialValues: {},
+                });
+            }
         });
 
     // Закрытие попапов по клику на оверлей
@@ -340,6 +416,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Установка обработчиков для кнопок закрытия
     setupClosePopupButtons();
 
-    // Инициализация валидации
+    // Инициализация валидации для всех форм один раз
     enableValidation(validationConfig);
 });
+
+// Добавляем toggleButtonState для использования в handleOpenPopup
+function toggleButtonState(inputList, buttonElement, config) {
+    const hasInvalidInput = inputList.some((inputElement) => !inputElement.validity.valid);
+    console.log('Проверка состояния кнопки:', { hasInvalidInput, class: buttonElement.classList });
+    if (hasInvalidInput) {
+        buttonElement.classList.add(config.inactiveButtonClass);
+        buttonElement.disabled = true;
+    } else {
+        buttonElement.classList.remove(config.inactiveButtonClass);
+        buttonElement.disabled = false;
+    }
+}
